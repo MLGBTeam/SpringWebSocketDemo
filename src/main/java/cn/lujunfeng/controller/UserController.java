@@ -62,7 +62,7 @@ public class UserController {
         user.setId(id);
         user.setName(principal.getName());
         user.setAge(20);
-        // 可以给多个指定用户推
+        // 可以给多个指定用户推送消息
         this.template.convertAndSendToUser("a", "/user", JSON.toJSONString(user));
         this.template.convertAndSendToUser("b", "/user", JSON.toJSONString(user));
     }
