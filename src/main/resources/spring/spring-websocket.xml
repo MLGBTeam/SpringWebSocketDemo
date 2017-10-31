@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:websocket="http://www.springframework.org/schema/websocket"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns="http://www.springframework.org/schema/beans"
+        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+
+    <bean class="com.alibaba.fastjson.support.spring.FastjsonSockJsMessageCodec"
+            id="fastjsonSockJsMessageCodec"/>
+
+    <!-- '/app'是客户端向服务端发送消息时使用的前缀，controller中的 @MessageMapping("hello"),send时的地址应该为'/app/hello' -->
+    <!-- '/user'是服务端向客户端广播指定用户时所用的前缀 -->
+    <websocket:message-broker application-destination-prefix="/app" user-destination-prefix="/user">
+        <websocket:stomp-endpoint allowed-origins="*" path="/websocket"/>
+        <websocket:stomp-endpoint allowed-origins="*" path="/sockjs">
+            <!-- MessageCodec，必须要配置，否则报错 -->
+            <websocket:sockjs
+                    message-codec="fastjsonSockJsMessageCodec">
+            </websocket:sockjs>
+        </websocket:stomp-endpoint>
+        <!--stomp-broker-relay 和 simple-broker 二者只能出现一个。-->
+        <!-- <websocket:stomp-broker-relay prefix="/topic,/user"/> -->
+        <!-- 客户端可以订阅的前缀,用','分隔 -->
+        <websocket:simple-broker prefix="/topic,/user"/>
+    </websocket:message-broker>
+
+</beans>

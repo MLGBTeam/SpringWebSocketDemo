@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Demo</title>
+</head>
+<body>
+<h2>Spring WebSocket Demo</h2>
+<div>
+    <button onclick="hello()">hello</button>
+</div>
+<div>
+    <button onclick="sendTo()">sendTo</button>
+</div>
+<div>
+    <button onclick="sendToUser()">sendToUser</button>
+</div>
+<div>
+    <button onclick="convertAndSend()">convertAndSend</button>
+</div>
+<div>
+    <button onclick="convertAndSendToUser()">convertAndSendToUser</button>
+</div>
+
+
+<script src="/js/stomp/stomp.min.js"></script>
+
+<script>
+
+    // 对不支持 WebSocket 和 MozWebSocket 的浏览器使用 sockjs 进行支持
+    if (!window.WebSocket && !window.MozWebSocket) {
+        document.write(
+                '<script src="/js/sockjs/sockjs.js"><\/script>');
+    }
+
+    // 兼容低版本 IE
+    if (!window.JSON) {
+        document.write(
+                '<script src="/js/json/json3.min.js"><\/script>');
+    }
+
+    var stompClient;
+
+    window.onload = function () {
+
+        var interval;
+
+        var init = function () {
+            var socket;
+            //初始化 socket
+            if (window.WebSocket) {
+                socket = new WebSocket("ws://" + window.location.host + "/websocket");
+            } else if (window.MozWebSocket) {
+                socket = new MozWebSocket("ws://" + window.location.host + "/websocket");
+            } else {
+                socket = new SockJS("http://" + window.location.host + "/sockjs");
+            }
+            //初始化 stomp
+            stompClient = Stomp.over(socket);
+        };
+
+        var connect = function () {
+            // stomp 连接
+            // client.connect(headers, connectCallback, errorCallback);
+            /*
+            var headers = {
+                login: 'mylogin',
+                passcode: 'mypasscode',
+                // additional header
+                'client-id': 'my-client-id'
+            };
+            */
+            stompClient.connect({}, function (frame) {
+
+                if (interval) {
+                    console.info("已重连！");
+                    window.clearInterval(interval);
+                }
+
+                // 订阅 '/topic/user'
+                stompClient.subscribe('/topic/user', function (frame) {
+                    var user = JSON.parse(frame.body);
+                    console.info(user);
+                });
+
+                // 订阅 '/user/user'
+                stompClient.subscribe('/user/user', function (frame) {
+                    var user = JSON.parse(frame.body);
+                    console.info(user);
+                });
+
+            }, function (error) {
+                // 失去连接时进行重连
+                // 已经在重连就无需再执行了
+                if (!interval) {
+                    reconnect();
+                }
+            });
+        };
+
+        var reconnect = function () {
+            interval = window.setInterval(function () {
+                init();
+                connect();
+                console.info("正在尝试重连！");
+            }, 5000);
+        };
+
+        init();
+        connect();
+    };
+
+    function hello() {
+        stompClient.send("/app/hello", {}, JSON.stringify({"id": "1", "name": "jack"}));
+    }
+
+    function sendTo() {
+        stompClient.send("/app/sendTo/33");
+    }
+
+    function sendToUser() {
+        stompClient.send("/app/sendToUser/444");
+    }
+
+    function convertAndSend() {
+        stompClient.send("/app/convertAndSend/666");
+    }
+
+    function convertAndSendToUser() {
+        stompClient.send("/app/convertAndSendToUser/77");
+    }
+
+</script>
+
+</body>
+</html>
